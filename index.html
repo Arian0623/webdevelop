@@ -1,27 +1,1311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyLife Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAF1E9;
+    --paper-deep:#DFEBDD;
+    --line:#C3D6BE;
+    --ink:#1F2D24;
+    --ink-soft:#4B5D50;
+    --ink-faint:#7C8C7F;
+    --red:#B4483C;
+    --brass:#A9822F;
+    --brass-soft:#DCC98B;
+    --navy:#1F313E;
+    --navy-deep:#182530;
+    --cream:#F4EFE0;
+    --white:#F7FAF6;
+    --good:#4C7A52;
+    --shadow: 0 2px 10px rgba(31,45,36,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .stamp-font{font-family:'Special Elite',cursive;}
+
+  #app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* ---- SIDEBAR / LEDGER BINDING ---- */
+  #sidebar{
+    width:220px;
+    flex-shrink:0;
+    background:linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  #sidebar-header{
+    padding:22px 18px 14px 18px;
+    border-bottom:1px solid rgba(244,239,224,0.15);
+  }
+  #sidebar-header .title{
+    font-family:'Special Elite',cursive;
+    font-size:17px;
+    letter-spacing:0.5px;
+    color:var(--cream);
+  }
+  #sidebar-header .subtitle{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--brass-soft);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+  #tabs{
+    list-style:none;
+    margin:0;
+    padding:8px 0;
+    flex:1;
+  }
+  #tabs li{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 18px;
+    cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:rgba(244,239,224,0.75);
+    border-left:3px solid transparent;
+    transition:background .15s, color .15s, border-color .15s;
+    white-space:nowrap;
+  }
+  #tabs li .num{
+    color:var(--brass-soft);
+    font-size:11px;
+    opacity:0.8;
+  }
+  #tabs li:hover{
+    background:rgba(244,239,224,0.06);
+    color:var(--cream);
+  }
+  #tabs li.active{
+    background:rgba(244,239,224,0.1);
+    color:var(--cream);
+    border-left-color:var(--brass);
+  }
+  #sidebar-footer{
+    padding:14px 18px 18px 18px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:rgba(244,239,224,0.4);
+    border-top:1px solid rgba(244,239,224,0.15);
+  }
+
+  /* ---- MAIN AREA ---- */
+  #main{
+    flex:1;
+    min-width:0;
+    position:relative;
+    background-image:
+      repeating-linear-gradient(to bottom, transparent, transparent 33px, var(--line) 34px);
+    background-position: 0 90px;
+  }
+  #main::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; left:64px;
+    width:1px;
+    background:rgba(180,72,60,0.35);
+    pointer-events:none;
+  }
+  #topbar{
+    padding:22px 34px 16px 84px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    background:linear-gradient(to bottom, var(--paper) 60%, rgba(234,241,233,0));
+    position:relative;
+    z-index:2;
+  }
+  #topbar .greeting{
+    font-family:'Special Elite',cursive;
+    font-size:22px;
+    color:var(--ink);
+  }
+  #topbar .clock{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  #content{
+    padding:6px 34px 60px 84px;
+    position:relative;
+    z-index:2;
+  }
+  section.panel{display:none;}
+  section.panel.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  h2.panel-title{
+    font-family:'Special Elite',cursive;
+    font-size:19px;
+    color:var(--ink);
+    margin:14px 0 4px 0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h2.panel-title .idx{
+    color:var(--brass);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+  }
+  p.panel-desc{
+    color:var(--ink-soft);
+    font-size:13.5px;
+    margin:0 0 18px 0;
+  }
+
+  /* ---- CARDS / LEDGER CELLS ---- */
+  .grid{
+    display:grid;
+    gap:14px;
+  }
+  .cards-4{grid-template-columns:repeat(4,1fr);}
+  .cards-3{grid-template-columns:repeat(3,1fr);}
+  .cards-2{grid-template-columns:repeat(2,1fr);}
+  @media(max-width:1000px){
+    .cards-4{grid-template-columns:repeat(2,1fr);}
+    .cards-3{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(max-width:700px){
+    .cards-4,.cards-3,.cards-2{grid-template-columns:1fr;}
+  }
+
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px 16px;
+    box-shadow:var(--shadow);
+  }
+  .card .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-faint);
+    margin-bottom:6px;
+  }
+  .card .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:26px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .card .value.small{font-size:18px;}
+  .card .sub{
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin-top:4px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .card.accent{border-left:4px solid var(--brass);}
+  .card.danger .value{color:var(--red);}
+  .card.good .value{color:var(--good);}
+
+  /* ---- FORMS ---- */
+  .form-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    margin-bottom:16px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:14px;
+  }
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    color:var(--ink-faint);
+  }
+  input, select, textarea{
+    font-family:'Source Serif 4', serif;
+    font-size:13.5px;
+    color:var(--ink);
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:7px 9px;
+    outline:none;
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color:var(--brass);
+    box-shadow:0 0 0 2px rgba(169,130,47,0.15);
+  }
+  input[type=number]{font-family:'IBM Plex Mono',monospace; width:100px;}
+  input[type=date], input[type=time]{font-family:'IBM Plex Mono',monospace;}
+  textarea{font-family:'Source Serif 4', serif; resize:vertical; min-height:60px;}
+
+  button{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    background:var(--navy);
+    color:var(--cream);
+    border:none;
+    border-radius:2px;
+    padding:9px 16px;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  button:hover{background:var(--navy-deep);}
+  button:active{transform:translateY(1px);}
+  button.ghost{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+  }
+  button.ghost:hover{background:var(--paper-deep);}
+  button.danger{background:var(--red);}
+  button.danger:hover{background:#903a30;}
+  button.small{padding:5px 10px; font-size:10.5px;}
+  button:focus-visible, input:focus-visible, select:focus-visible, li:focus-visible{
+    outline:2px solid var(--brass); outline-offset:2px;
+  }
+
+  /* ---- TABLE ---- */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    overflow:hidden;
+    font-size:13px;
+  }
+  thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    color:var(--ink-faint);
+    background:var(--paper-deep);
+    padding:9px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  tbody td{
+    padding:9px 12px;
+    border-bottom:1px solid var(--line);
+    color:var(--ink);
+    vertical-align:top;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--paper-deep);}
+  td.num, th.num{font-family:'IBM Plex Mono',monospace;}
+  .empty-row{
+    text-align:center;
+    color:var(--ink-faint);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:22px !important;
+  }
+  .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:10px;
+    background:var(--paper-deep);
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+  }
+  .tag.priority-high{background:rgba(180,72,60,0.12); color:var(--red); border-color:rgba(180,72,60,0.3);}
+  .tag.priority-med{background:rgba(169,130,47,0.15); color:var(--brass); border-color:rgba(169,130,47,0.3);}
+  .tag.priority-low{background:rgba(76,122,82,0.12); color:var(--good); border-color:rgba(76,122,82,0.3);}
+  .checkbox-cell{cursor:pointer; font-size:16px;}
+
+  /* ---- STAMP (signature element) ---- */
+  .stamp{
+    position:absolute;
+    top:14px;
+    right:34px;
+    width:108px;
+    height:108px;
+    border:3px solid var(--red);
+    border-radius:50%;
+    color:var(--red);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    transform:rotate(-8deg);
+    opacity:0.85;
+    font-family:'Special Elite',cursive;
+    text-align:center;
+    pointer-events:none;
+  }
+  .stamp .day{font-size:22px; font-weight:700; line-height:1;}
+  .stamp .month{font-size:10px; letter-spacing:1px; margin-top:2px;}
+  .stamp .year{font-size:9px; letter-spacing:1px; opacity:0.8;}
+  @media(max-width:700px){.stamp{display:none;}}
+
+  /* ---- HABIT GRID ---- */
+  .habit-grid-wrap{overflow-x:auto;}
+  .habit-grid{border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:10.5px;}
+  .habit-grid th, .habit-grid td{
+    border:1px solid var(--line);
+    text-align:center;
+    width:26px;
+    height:26px;
+    padding:0;
+  }
+  .habit-grid th{background:var(--paper-deep); font-weight:500; color:var(--ink-faint);}
+  .habit-grid td.name-cell{
+    text-align:left;
+    width:auto;
+    padding:0 10px;
+    background:var(--white);
+    color:var(--ink);
+    font-family:'Source Serif 4',serif;
+    font-size:13px;
+  }
+  .habit-grid td.day-cell{cursor:pointer; background:var(--white);}
+  .habit-grid td.day-cell.done{background:var(--good); }
+  .habit-grid td.day-cell.today{box-shadow:inset 0 0 0 2px var(--brass);}
+  .habit-grid td.streak-cell{
+    background:var(--white);
+    font-weight:600;
+    color:var(--brass);
+  }
+
+  /* ---- BAR CHART ---- */
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    height:130px;
+    padding:10px 6px 0 6px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+  }
+  .bar-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    height:100%;
+  }
+  .bar-col .bar{
+    width:60%;
+    background:var(--brass);
+    border-radius:2px 2px 0 0;
+    min-height:2px;
+    transition:height .3s;
+  }
+  .bar-col .bar-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    margin-top:5px;
+    white-space:nowrap;
+  }
+
+  .progress-track{
+    width:100%;
+    height:8px;
+    background:var(--paper-deep);
+    border-radius:5px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .progress-fill{height:100%; background:var(--good); border-radius:5px;}
+
+  .section-flex{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;}
+  .section-flex > div{flex:1; min-width:280px;}
+
+  .journal-entry{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-left:3px solid var(--brass);
+    border-radius:3px;
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .journal-entry .je-head{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint);
+    margin-bottom:8px;
+  }
+  .journal-entry .je-mood{font-size:16px;}
+  .journal-entry .je-body{font-size:14px; line-height:1.6; color:var(--ink);}
+  .journal-entry .je-body .je-label{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase;
+    color:var(--ink-faint); letter-spacing:0.6px; display:block; margin-top:8px;
+  }
+
+  .clock-display{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:44px;
+    font-weight:600;
+    color:var(--ink);
+    letter-spacing:1px;
+  }
+  .clock-sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+    margin-top:2px;
+  }
+  .clock-actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .status-dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:var(--ink-faint); margin-right:6px;
+  }
+  .status-dot.on{background:var(--good); box-shadow:0 0 0 3px rgba(76,122,82,0.2);}
+  .status-dot.break{background:var(--brass); box-shadow:0 0 0 3px rgba(169,130,47,0.2);}
+
+  .toolbar{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{min-width:150px;}
+
+  .review-box textarea{width:100%; min-height:100px;}
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--paper);}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:5px;}
+
+  .save-indicator{
+    position:fixed;
+    bottom:16px;
+    right:16px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    background:var(--white);
+    border:1px solid var(--line);
+    padding:6px 12px;
+    border-radius:14px;
+    opacity:0;
+    transition:opacity .3s;
+    z-index:50;
+  }
+  .save-indicator.show{opacity:1;}
+</style>
 </head>
 <body>
-    <h2>Welcome to My Website</h2>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="about.html">About</a></li>
-            <li><a href="contact.html">Contact</a></li>
-        </ul>
-    </nav>
-    <main>
-        <h1>Home Page</h1>
-        <p>This is the home page of my website. Here you can find information about various topics.</p>
-        <img src="wildlife.jpg" alt="A beautiful landscape of wildlife" width="600">
-        <p>Feel free to explore the other pages to learn more about what we offer.</p>
-    </main>
-    <footer>
-        <p>&copy; 2024 My Website. All rights reserved.</p>
-    </footer>
+<div id="app">
+  <nav id="sidebar">
+    <div id="sidebar-header">
+      <div class="title">🌟 MyLife Dashboard</div>
+      <div class="subtitle">Personal Ledger</div>
+    </div>
+    <ul id="tabs"></ul>
+    <div id="sidebar-footer">Saved locally to your account · private</div>
+  </nav>
+  <main id="main">
+    <div id="topbar">
+      <div>
+        <div class="greeting" id="greeting-text">Good day</div>
+      </div>
+      <div class="clock" id="topbar-clock">--:--:--</div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+<div class="save-indicator" id="save-indicator">✓ saved</div>
+
+<script>
+/* ============================= STATE ============================= */
+const STORAGE_KEY = 'mylife-dashboard-data-v1';
+const defaultState = () => ({
+  tasks: [],
+  notes: [],
+  journal: [],
+  habits: [
+    {id:'h1', name:'Reading'},
+    {id:'h2', name:'Exercise'},
+    {id:'h3', name:'Coding'},
+    {id:'h4', name:'Water'},
+    {id:'h5', name:'Sleep 7h+'}
+  ],
+  habitLog: {},
+  goals: [],
+  courses: [],
+  finance: [],
+  workEntries: [],
+  activeClock: null,
+  bonuses: [],
+  deductions: [],
+  settings: { hourlyRate: 15, overtimeMultiplier: 1.5, overtimeThreshold: 8 },
+  monthlyReviews: {}
+});
+let state = defaultState();
+let saveTimer = null;
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmtDate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtMonthKey(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}`; }
+function fmtTimeHM(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function todayKey(){ return fmtDate(new Date()); }
+function money(n){ return '$' + (Math.round((n+Number.EPSILON)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function hrs(n){ return (Math.round((n+Number.EPSILON)*100)/100) + 'h'; }
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const loaded = JSON.parse(res.value);
+      state = Object.assign(defaultState(), loaded);
+    }
+  }catch(e){
+    console.log('No existing data found, starting fresh.');
+  }
+}
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+      flashSaved();
+    }catch(e){ console.error('Save failed', e); }
+  }, 300);
+}
+function flashSaved(){
+  const el = document.getElementById('save-indicator');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 900);
+}
+
+/* ============================= NAV ============================= */
+const SECTIONS = [
+  {id:'dashboard', label:'Dashboard', num:'01'},
+  {id:'planner', label:'Planner', num:'02'},
+  {id:'work', label:'Work Tracker', num:'03'},
+  {id:'salary', label:'Salary', num:'04'},
+  {id:'notes', label:'Notes', num:'05'},
+  {id:'journal', label:'Journal', num:'06'},
+  {id:'habits', label:'Habit Tracker', num:'07'},
+  {id:'goals', label:'Goals', num:'08'},
+  {id:'learning', label:'Learning', num:'09'},
+  {id:'finance', label:'Finance', num:'10'},
+  {id:'reports', label:'Reports', num:'11'}
+];
+
+function buildNav(){
+  const ul = document.getElementById('tabs');
+  ul.innerHTML = SECTIONS.map(s=>`<li data-id="${s.id}" tabindex="0"><span class="num">${s.num}</span> ${s.label}</li>`).join('');
+  ul.querySelectorAll('li').forEach(li=>{
+    li.addEventListener('click', ()=>showSection(li.dataset.id));
+    li.addEventListener('keydown', e=>{ if(e.key==='Enter') showSection(li.dataset.id); });
+  });
+}
+function showSection(id){
+  document.querySelectorAll('#tabs li').forEach(li=>li.classList.toggle('active', li.dataset.id===id));
+  document.querySelectorAll('section.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+id));
+  const renderer = RENDERERS[id];
+  if(renderer) renderer();
+}
+
+/* ============================= TOPBAR ============================= */
+function tickClock(){
+  const now = new Date();
+  document.getElementById('topbar-clock').textContent = now.toLocaleString(undefined,{ weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const h = now.getHours();
+  const greet = h<5?'Still up?':h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night';
+  document.getElementById('greeting-text').textContent = greet;
+}
+
+/* ============================= GENERIC RECORD MANAGER ============================= */
+function renderRecordManager(cfg){
+  // cfg: {containerId, listKey, fields:[{key,label,type,options,width}], columns:[{key,label,render}], onAdd?, sort?}
+  const container = document.getElementById(cfg.containerId);
+  const list = state[cfg.listKey];
+  const formHtml = `<div class="form-row" id="${cfg.containerId}-form">
+    ${cfg.fields.map(f=>fieldHtml(f, cfg.containerId)).join('')}
+    <button id="${cfg.containerId}-add">+ Add</button>
+  </div>`;
+  const rows = (cfg.sort ? cfg.sort([...list]) : list);
+  const tableHtml = `<table><thead><tr>${cfg.columns.map(c=>`<th${c.num?' class="num"':''}>${c.label}</th>`).join('')}<th></th></tr></thead>
+  <tbody>
+  ${rows.length===0 ? `<tr><td class="empty-row" colspan="${cfg.columns.length+1}">Nothing here yet — add your first entry above.</td></tr>` :
+    rows.map(item=>`<tr>${cfg.columns.map(c=>`<td${c.num?' class="num"':''}>${c.render ? c.render(item) : (item[c.key] ?? '')}</td>`).join('')}<td><button class="ghost small" data-del="${item.id}">Delete</button></td></tr>`).join('')}
+  </tbody></table>`;
+  container.innerHTML = formHtml + tableHtml;
+
+  document.getElementById(`${cfg.containerId}-add`).addEventListener('click', ()=>{
+    const record = {id: uid()};
+    let valid = true;
+    cfg.fields.forEach(f=>{
+      const el = document.getElementById(`${cfg.containerId}-f-${f.key}`);
+      let v = el.value;
+      if(f.type==='number') v = v===''? 0 : parseFloat(v);
+      if(f.required && (v===''||v===undefined)) valid = false;
+      record[f.key] = v;
+    });
+    if(!valid){ alert('Please fill in the required fields.'); return; }
+    if(cfg.onAdd) cfg.onAdd(record);
+    state[cfg.listKey].push(record);
+    saveState();
+    renderRecordManager(cfg);
+    if(cfg.afterRender) cfg.afterRender();
+  });
+  container.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state[cfg.listKey] = state[cfg.listKey].filter(x=>x.id!==btn.dataset.del);
+      saveState();
+      renderRecordManager(cfg);
+      if(cfg.afterRender) cfg.afterRender();
+    });
+  });
+}
+function fieldHtml(f, ns){
+  const id = `${ns}-f-${f.key}`;
+  if(f.type==='select'){
+    return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}">${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}</select></div>`;
+  }
+  if(f.type==='textarea'){
+    return `<div class="field" style="flex:2; min-width:220px;"><label for="${id}">${f.label}</label><textarea id="${id}" rows="1"></textarea></div>`;
+  }
+  const inputType = f.type||'text';
+  return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" type="${inputType}" ${f.placeholder?`placeholder="${f.placeholder}"`:''} ${f.step?`step="${f.step}"`:''}></div>`;
+}
+
+/* ============================= DASHBOARD ============================= */
+function renderDashboard(){
+  const el = document.getElementById('panel-dashboard');
+  const today = todayKey();
+  const now = new Date();
+
+  const todaysTasks = state.tasks.filter(t=>t.deadline===today && !t.done);
+  const upcoming = state.tasks.filter(t=>!t.done && t.deadline && t.deadline>=today)
+    .sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
+
+  const todaysWork = state.workEntries.filter(w=>w.date===today);
+  const todaysHours = todaysWork.reduce((s,w)=>s+w.hours,0);
+
+  const habitsToday = state.habits.length;
+  const doneToday = state.habits.filter(h=> state.habitLog[today] && state.habitLog[today][h.id]).length;
+  const habitPct = habitsToday? Math.round(doneToday/habitsToday*100) : 0;
+
+  const monthKey = fmtMonthKey(now);
+  const monthWork = state.workEntries.filter(w=>w.date.startsWith(monthKey));
+  const monthHours = monthWork.reduce((s,w)=>s+w.hours,0);
+  const monthSalary = calcMonthlySalary(monthKey);
+
+  el.innerHTML = `
+    <div class="stamp"><div class="day">${pad(now.getDate())}</div><div class="month">${now.toLocaleString(undefined,{month:'short'}).toUpperCase()}</div><div class="year">${now.getFullYear()}</div></div>
+    <h2 class="panel-title"><span class="idx">01</span> Dashboard</h2>
+    <p class="panel-desc">Today's snapshot, at a glance.</p>
+    <div class="grid cards-4">
+      <div class="card accent"><div class="label">Hours today</div><div class="value">${hrs(todaysHours)}</div><div class="sub">${todaysWork.length} entr${todaysWork.length===1?'y':'ies'} logged</div></div>
+      <div class="card"><div class="label">Tasks due today</div><div class="value">${todaysTasks.length}</div><div class="sub">${state.tasks.filter(t=>!t.done).length} open total</div></div>
+      <div class="card good"><div class="label">Habits done today</div><div class="value">${doneToday}/${habitsToday}</div><div class="sub">${habitPct}% complete</div></div>
+      <div class="card"><div class="label">Est. salary (this month)</div><div class="value small">${money(monthSalary.total)}</div><div class="sub">${hrs(monthHours)} logged</div></div>
+    </div>
+
+    <div class="section-flex" style="margin-top:22px;">
+      <div>
+        <h2 class="panel-title" style="font-size:15px;">Upcoming tasks</h2>
+        <table><thead><tr><th>Task</th><th>Priority</th><th>Due</th></tr></thead>
+        <tbody>${upcoming.length===0? `<tr><td class="empty-row" colspan="3">No upcoming tasks. Add some in the Planner.</td></tr>` :
+          upcoming.map(t=>`<tr><td>${escapeHtml(t.text)}</td><td>${priorityTag(t.priority)}</td><td class="num">${t.deadline||'—'}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div>
+        <h2 class="panel-title" style="font-size:15px;">Habit streaks</h2>
+        <table><thead><tr><th>Habit</th><th class="num">Streak</th></tr></thead>
+        <tbody>${state.habits.length===0? `<tr><td class="empty-row" colspan="2">No habits yet.</td></tr>` :
+          state.habits.map(h=>`<tr><td>${escapeHtml(h.name)}</td><td class="num">${computeStreak(h.id)} day(s)</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+function priorityTag(p){
+  const cls = p==='high'?'priority-high':p==='low'?'priority-low':'priority-med';
+  return `<span class="tag ${cls}">${p||'medium'}</span>`;
+}
+function escapeHtml(s){
+  return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================= PLANNER ============================= */
+function renderPlanner(){
+  renderRecordManager({
+    containerId:'planner-list',
+    listKey:'tasks',
+    fields:[
+      {key:'text', label:'Task', type:'text', placeholder:'What needs doing?', required:true},
+      {key:'priority', label:'Priority', type:'select', options:[{value:'high',label:'High'},{value:'medium',label:'Medium'},{value:'low',label:'Low'}]},
+      {key:'deadline', label:'Deadline', type:'date'}
+    ],
+    columns:[
+      {key:'done', label:'', render:t=>`<span class="checkbox-cell" data-toggle="${t.id}">${t.done?'☑':'☐'}</span>`},
+      {key:'text', label:'Task', render:t=>`<span style="${t.done?'text-decoration:line-through;color:var(--ink-faint);':''}">${escapeHtml(t.text)}</span>`},
+      {key:'priority', label:'Priority', render:t=>priorityTag(t.priority)},
+      {key:'deadline', label:'Deadline', num:true, render:t=>t.deadline||'—'}
+    ],
+    sort: list => list.sort((a,b)=> (a.done-b.done) || (a.deadline||'9999').localeCompare(b.deadline||'9999')),
+    afterRender: ()=>{
+      document.querySelectorAll('[data-toggle]').forEach(cell=>{
+        cell.addEventListener('click', ()=>{
+          const t = state.tasks.find(x=>x.id===cell.dataset.toggle);
+          t.done = !t.done;
+          t.completedDate = t.done ? todayKey() : null;
+          saveState();
+          renderPlanner();
+        });
+      });
+    }
+  });
+}
+
+/* ============================= WORK TRACKER ============================= */
+let clockInterval = null;
+function renderWork(){
+  const el = document.getElementById('panel-work');
+  const ac = state.activeClock;
+  let statusLabel = 'Clocked out';
+  let dotClass = '';
+  if(ac && !ac.clockOutTime){
+    statusLabel = ac.onBreak ? 'On break' : 'Clocked in';
+    dotClass = ac.onBreak ? 'break' : 'on';
+  }
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">03</span> Work Tracker</h2>
+    <p class="panel-desc">Clock in and out, or log hours manually. Overtime kicks in past ${state.settings.overtimeThreshold}h/day.</p>
+    <div class="grid cards-2">
+      <div class="card">
+        <div class="label"><span class="status-dot ${dotClass}"></span>${statusLabel}</div>
+        <div class="clock-display" id="live-timer">00:00:00</div>
+        <div class="clock-sub" id="clock-meta">${ac && !ac.clockOutTime ? 'Since '+fmtTimeHM(new Date(ac.clockInTime)) : 'Not currently working'}</div>
+        <div class="clock-actions">
+          ${(!ac || ac.clockOutTime) ? `<button id="btn-clockin">Clock In</button>` : ''}
+          ${(ac && !ac.clockOutTime && !ac.onBreak) ? `<button class="ghost" id="btn-break">Start Break</button>` : ''}
+          ${(ac && !ac.clockOutTime && ac.onBreak) ? `<button class="ghost" id="btn-endbreak">End Break</button>` : ''}
+          ${(ac && !ac.clockOutTime) ? `<button class="danger" id="btn-clockout">Clock Out</button>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Today</div>
+        <div class="value">${hrs(state.workEntries.filter(w=>w.date===todayKey()).reduce((s,w)=>s+w.hours,0))}</div>
+        <div class="sub">This month: ${hrs(state.workEntries.filter(w=>w.date.startsWith(fmtMonthKey(new Date()))).reduce((s,w)=>s+w.hours,0))}</div>
+      </div>
+    </div>
+
+    <h2 class="panel-title" style="font-size:15px; margin-top:22px;">Manual entry</h2>
+    <div id="work-manual-form"></div>
+
+    <h2 class="panel-title" style="font-size:15px; margin-top:22px;">Entries</h2>
+    <div id="work-table"></div>
+  `;
+
+  document.getElementById('btn-clockin')?.addEventListener('click', ()=>{
+    state.activeClock = { clockInTime: Date.now(), onBreak:false, breakMinutes:0, breakStart:null, clockOutTime:null };
+    saveState(); renderWork();
+  });
+  document.getElementById('btn-break')?.addEventListener('click', ()=>{
+    state.activeClock.onBreak = true;
+    state.activeClock.breakStart = Date.now();
+    saveState(); renderWork();
+  });
+  document.getElementById('btn-endbreak')?.addEventListener('click', ()=>{
+    const mins = (Date.now() - state.activeClock.breakStart) / 60000;
+    state.activeClock.breakMinutes = (state.activeClock.breakMinutes||0) + mins;
+    state.activeClock.onBreak = false;
+    state.activeClock.breakStart = null;
+    saveState(); renderWork();
+  });
+  document.getElementById('btn-clockout')?.addEventListener('click', ()=>{
+    const ac = state.activeClock;
+    let breakMin = ac.breakMinutes||0;
+    if(ac.onBreak){ breakMin += (Date.now()-ac.breakStart)/60000; }
+    const totalMs = Date.now() - ac.clockInTime;
+    const totalHours = Math.max(0, (totalMs/3600000) - (breakMin/60));
+    state.workEntries.push({
+      id: uid(),
+      date: todayKey(),
+      clockIn: fmtTimeHM(new Date(ac.clockInTime)),
+      clockOut: fmtTimeHM(new Date()),
+      breakMin: Math.round(breakMin),
+      hours: Math.round(totalHours*100)/100,
+      source:'timer'
+    });
+    state.activeClock = null;
+    saveState(); renderWork();
+  });
+
+  clearInterval(clockInterval);
+  if(ac && !ac.clockOutTime){
+    clockInterval = setInterval(()=>{
+      const acNow = state.activeClock;
+      if(!acNow) return;
+      let breakMin = acNow.breakMinutes||0;
+      if(acNow.onBreak) breakMin += (Date.now()-acNow.breakStart)/60000;
+      const elapsedMs = Date.now() - acNow.clockInTime - breakMin*60000;
+      const s = Math.max(0,Math.floor(elapsedMs/1000));
+      const hh = pad(Math.floor(s/3600)), mm = pad(Math.floor((s%3600)/60)), ss = pad(s%60);
+      const timerEl = document.getElementById('live-timer');
+      if(timerEl) timerEl.textContent = `${hh}:${mm}:${ss}`;
+    }, 1000);
+  }
+
+  // manual entry form
+  const manualContainer = document.getElementById('work-manual-form');
+  manualContainer.innerHTML = `<div class="form-row">
+    <div class="field"><label>Date</label><input type="date" id="man-date" value="${todayKey()}"></div>
+    <div class="field"><label>Clock in</label><input type="time" id="man-in" value="09:00"></div>
+    <div class="field"><label>Clock out</label><input type="time" id="man-out" value="17:00"></div>
+    <div class="field"><label>Break (min)</label><input type="number" id="man-break" value="0" min="0"></div>
+    <button id="man-add">+ Add Entry</button>
+  </div>`;
+  document.getElementById('man-add').addEventListener('click', ()=>{
+    const date = document.getElementById('man-date').value;
+    const cin = document.getElementById('man-in').value;
+    const cout = document.getElementById('man-out').value;
+    const brk = parseFloat(document.getElementById('man-break').value)||0;
+    if(!date||!cin||!cout){ alert('Please fill in date, clock in and clock out.'); return; }
+    const [ih,im] = cin.split(':').map(Number); const [oh,om] = cout.split(':').map(Number);
+    let mins = (oh*60+om) - (ih*60+im) - brk;
+    if(mins<0) mins += 24*60;
+    state.workEntries.push({id:uid(), date, clockIn:cin, clockOut:cout, breakMin:brk, hours: Math.round(mins/60*100)/100, source:'manual'});
+    saveState(); renderWork();
+  });
+
+  const tableContainer = document.getElementById('work-table');
+  const entries = [...state.workEntries].sort((a,b)=>b.date.localeCompare(a.date));
+  const threshold = state.settings.overtimeThreshold;
+  tableContainer.innerHTML = `<table><thead><tr><th>Date</th><th>In</th><th>Out</th><th class="num">Break</th><th class="num">Hours</th><th class="num">Overtime</th><th></th></tr></thead>
+  <tbody>${entries.length===0? `<tr><td class="empty-row" colspan="7">No hours logged yet.</td></tr>` :
+    entries.map(w=>{
+      const ot = Math.max(0, w.hours-threshold);
+      return `<tr><td>${w.date}</td><td class="num">${w.clockIn||'—'}</td><td class="num">${w.clockOut||'—'}</td><td class="num">${w.breakMin||0}m</td><td class="num">${hrs(w.hours)}</td><td class="num">${ot>0?hrs(ot):'—'}</td><td><button class="ghost small" data-delwork="${w.id}">Delete</button></td></tr>`;
+    }).join('')}
+  </tbody></table>`;
+  tableContainer.querySelectorAll('[data-delwork]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.workEntries = state.workEntries.filter(w=>w.id!==btn.dataset.delwork);
+      saveState(); renderWork();
+    });
+  });
+}
+
+/* ============================= SALARY ============================= */
+function calcMonthlySalary(monthKey){
+  const rate = state.settings.hourlyRate;
+  const otMult = state.settings.overtimeMultiplier;
+  const threshold = state.settings.overtimeThreshold;
+  const entries = state.workEntries.filter(w=>w.date.startsWith(monthKey));
+  const byDay = {};
+  entries.forEach(w=>{ byDay[w.date] = (byDay[w.date]||0) + w.hours; });
+  let regularPay=0, overtimePay=0, regHours=0, otHours=0;
+  Object.values(byDay).forEach(h=>{
+    const reg = Math.min(h, threshold), ot = Math.max(0, h-threshold);
+    regHours += reg; otHours += ot;
+    regularPay += reg*rate;
+    overtimePay += ot*rate*otMult;
+  });
+  const bonuses = state.bonuses.filter(b=>b.date && b.date.startsWith(monthKey)).reduce((s,b)=>s+Number(b.amount),0);
+  const deductions = state.deductions.filter(d=>d.date && d.date.startsWith(monthKey)).reduce((s,d)=>s+Number(d.amount),0);
+  const total = regularPay + overtimePay + bonuses - deductions;
+  return {regularPay, overtimePay, regHours, otHours, bonuses, deductions, total};
+}
+function renderSalary(){
+  const el = document.getElementById('panel-salary');
+  const monthKey = fmtMonthKey(new Date());
+  const calc = calcMonthlySalary(monthKey);
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">04</span> Salary</h2>
+    <p class="panel-desc">Calculated automatically from your logged work hours.</p>
+
+    <div class="form-row">
+      <div class="field"><label>Hourly rate ($)</label><input type="number" id="rate-input" step="0.5" value="${state.settings.hourlyRate}"></div>
+      <div class="field"><label>Overtime multiplier</label><input type="number" id="otm-input" step="0.1" value="${state.settings.overtimeMultiplier}"></div>
+      <div class="field"><label>Overtime after (h/day)</label><input type="number" id="oth-input" step="0.5" value="${state.settings.overtimeThreshold}"></div>
+      <button id="save-settings">Save Settings</button>
+    </div>
+
+    <div class="grid cards-4">
+      <div class="card accent"><div class="label">This month total</div><div class="value">${money(calc.total)}</div></div>
+      <div class="card"><div class="label">Regular pay</div><div class="value small">${money(calc.regularPay)}</div><div class="sub">${hrs(calc.regHours)}</div></div>
+      <div class="card"><div class="label">Overtime pay</div><div class="value small">${money(calc.overtimePay)}</div><div class="sub">${hrs(calc.otHours)}</div></div>
+      <div class="card"><div class="label">Bonuses − Deductions</div><div class="value small">${money(calc.bonuses-calc.deductions)}</div></div>
+    </div>
+
+    <div class="section-flex" style="margin-top:22px;">
+      <div>
+        <h2 class="panel-title" style="font-size:15px;">Bonuses</h2>
+        <div id="bonus-list"></div>
+      </div>
+      <div>
+        <h2 class="panel-title" style="font-size:15px;">Deductions</h2>
+        <div id="deduction-list"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('save-settings').addEventListener('click', ()=>{
+    state.settings.hourlyRate = parseFloat(document.getElementById('rate-input').value)||0;
+    state.settings.overtimeMultiplier = parseFloat(document.getElementById('otm-input').value)||1;
+    state.settings.overtimeThreshold = parseFloat(document.getElementById('oth-input').value)||8;
+    saveState(); renderSalary();
+  });
+
+  renderRecordManager({
+    containerId:'bonus-list', listKey:'bonuses',
+    fields:[{key:'label',label:'Reason',type:'text',placeholder:'e.g. Project bonus',required:true},{key:'amount',label:'Amount ($)',type:'number',step:'0.01',required:true},{key:'date',label:'Date',type:'date'}],
+    columns:[{key:'label',label:'Reason'},{key:'amount',label:'Amount',num:true,render:b=>money(Number(b.amount))},{key:'date',label:'Date',num:true}],
+    afterRender: renderSalary
+  });
+  renderRecordManager({
+    containerId:'deduction-list', listKey:'deductions',
+    fields:[{key:'label',label:'Reason',type:'text',placeholder:'e.g. Tax',required:true},{key:'amount',label:'Amount ($)',type:'number',step:'0.01',required:true},{key:'date',label:'Date',type:'date'}],
+    columns:[{key:'label',label:'Reason'},{key:'amount',label:'Amount',num:true,render:d=>money(Number(d.amount))},{key:'date',label:'Date',num:true}],
+    afterRender: renderSalary
+  });
+}
+
+/* ============================= NOTES ============================= */
+function renderNotes(){
+  const el = document.getElementById('panel-notes');
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">05</span> Notes</h2>
+    <p class="panel-desc">Quick notes, tagged and searchable.</p>
+    <div class="toolbar"><input id="note-search" placeholder="Search notes..."></div>
+    <div id="notes-list"></div>
+  `;
+  const draw = ()=>{
+    const q = (document.getElementById('note-search')?.value||'').toLowerCase();
+    renderRecordManager({
+      containerId:'notes-list', listKey:'notes',
+      fields:[
+        {key:'text', label:'Note', type:'textarea', required:true},
+        {key:'category', label:'Category', type:'text', placeholder:'e.g. Work'}
+      ],
+      columns:[
+        {key:'text', label:'Note', render:n=>escapeHtml(n.text)},
+        {key:'category', label:'Category', render:n=>n.category?`<span class="tag">${escapeHtml(n.category)}</span>`:'—'},
+        {key:'date', label:'Added', num:true, render:n=>n.date||'—'}
+      ],
+      onAdd: r=>{ r.date = todayKey(); },
+      sort: list => list.filter(n=> !q || (n.text||'').toLowerCase().includes(q) || (n.category||'').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),
+      afterRender: ()=>{}
+    });
+  };
+  draw();
+  document.getElementById('note-search').addEventListener('input', draw);
+}
+
+/* ============================= JOURNAL ============================= */
+const MOODS = [{v:'great',e:'😄'},{v:'good',e:'🙂'},{v:'okay',e:'😐'},{v:'low',e:'😕'},{v:'rough',e:'😣'}];
+function renderJournal(){
+  const el = document.getElementById('panel-journal');
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">06</span> Journal</h2>
+    <p class="panel-desc">A daily page for your mood, gratitude, and reflections.</p>
+    <div class="form-row" id="journal-form">
+      <div class="field"><label>Date</label><input type="date" id="j-date" value="${todayKey()}"></div>
+      <div class="field"><label>Mood</label><select id="j-mood">${MOODS.map(m=>`<option value="${m.v}">${m.e} ${m.v}</option>`).join('')}</select></div>
+      <div class="field" style="flex:1; min-width:220px;"><label>Gratitude</label><input id="j-gratitude" placeholder="One thing you're grateful for"></div>
+      <div class="field" style="flex:2; min-width:260px;"><label>Reflection</label><textarea id="j-reflection" rows="1" placeholder="How did today go?"></textarea></div>
+      <button id="j-add">+ Add Entry</button>
+    </div>
+    <div id="journal-entries"></div>
+  `;
+  document.getElementById('j-add').addEventListener('click', ()=>{
+    const date = document.getElementById('j-date').value || todayKey();
+    const mood = document.getElementById('j-mood').value;
+    const gratitude = document.getElementById('j-gratitude').value;
+    const reflection = document.getElementById('j-reflection').value;
+    if(!gratitude && !reflection){ alert('Add at least a gratitude note or a reflection.'); return; }
+    state.journal.push({id:uid(), date, mood, gratitude, reflection});
+    saveState(); renderJournal();
+  });
+  const list = [...state.journal].sort((a,b)=>b.date.localeCompare(a.date));
+  const wrap = document.getElementById('journal-entries');
+  wrap.innerHTML = list.length===0 ? `<p class="empty-row" style="text-align:left;padding:10px 0;">No journal entries yet.</p>` :
+    list.map(j=>{
+      const moodE = MOODS.find(m=>m.v===j.mood)?.e || '';
+      return `<div class="journal-entry">
+        <div class="je-head"><span>${j.date}</span><span class="je-mood">${moodE} ${j.mood||''} &nbsp; <button class="ghost small" data-deljournal="${j.id}">Delete</button></span></div>
+        <div class="je-body">
+          ${j.gratitude?`<span class="je-label">Grateful for</span>${escapeHtml(j.gratitude)}`:''}
+          ${j.reflection?`<span class="je-label">Reflection</span>${escapeHtml(j.reflection)}`:''}
+        </div>
+      </div>`;
+    }).join('');
+  wrap.querySelectorAll('[data-deljournal]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.journal = state.journal.filter(j=>j.id!==btn.dataset.deljournal);
+      saveState(); renderJournal();
+    });
+  });
+}
+
+/* ============================= HABITS ============================= */
+function daysInMonth(year, month){ return new Date(year, month+1, 0).getDate(); }
+function computeStreak(habitId){
+  let streak = 0;
+  let d = new Date();
+  while(true){
+    const key = fmtDate(d);
+    if(state.habitLog[key] && state.habitLog[key][habitId]){
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else { break; }
+  }
+  return streak;
+}
+function renderHabits(){
+  const el = document.getElementById('panel-habits');
+  const now = new Date();
+  const dim = daysInMonth(now.getFullYear(), now.getMonth());
+  const monthLabel = now.toLocaleString(undefined,{month:'long', year:'numeric'});
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">07</span> Habit Tracker</h2>
+    <p class="panel-desc">Tap a day to mark a habit complete. ${monthLabel}.</p>
+    <div class="form-row">
+      <div class="field" style="flex:1; min-width:200px;"><label>New habit</label><input id="habit-new" placeholder="e.g. Meditate"></div>
+      <button id="habit-add">+ Add Habit</button>
+    </div>
+    <div class="habit-grid-wrap"><table class="habit-grid" id="habit-table"></table></div>
+  `;
+  document.getElementById('habit-add').addEventListener('click', ()=>{
+    const v = document.getElementById('habit-new').value.trim();
+    if(!v) return;
+    state.habits.push({id:uid(), name:v});
+    saveState(); renderHabits();
+  });
+
+  const today = todayKey();
+  let head = `<tr><th style="text-align:left; padding-left:10px;">Habit</th>`;
+  for(let d=1; d<=dim; d++){ head += `<th>${d}</th>`; }
+  head += `<th>Streak</th><th></th></tr>`;
+  let body = '';
+  state.habits.forEach(h=>{
+    body += `<tr><td class="name-cell">${escapeHtml(h.name)}</td>`;
+    for(let d=1; d<=dim; d++){
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(d)}`;
+      const done = !!(state.habitLog[dateStr] && state.habitLog[dateStr][h.id]);
+      const isToday = dateStr===today;
+      body += `<td class="day-cell ${done?'done':''} ${isToday?'today':''}" data-habit="${h.id}" data-date="${dateStr}">${done?'✓':''}</td>`;
+    }
+    body += `<td class="streak-cell">${computeStreak(h.id)}</td><td><button class="ghost small" data-delhabit="${h.id}">✕</button></td></tr>`;
+  });
+  const table = document.getElementById('habit-table');
+  table.innerHTML = head + (state.habits.length ? body : `<tr><td colspan="${dim+2}" class="empty-row">No habits yet — add one above.</td></tr>`);
+  table.querySelectorAll('[data-habit]').forEach(cell=>{
+    cell.addEventListener('click', ()=>{
+      const habitId = cell.dataset.habit, date = cell.dataset.date;
+      if(!state.habitLog[date]) state.habitLog[date] = {};
+      state.habitLog[date][habitId] = !state.habitLog[date][habitId];
+      saveState(); renderHabits();
+    });
+  });
+  table.querySelectorAll('[data-delhabit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.habits = state.habits.filter(h=>h.id!==btn.dataset.delhabit);
+      saveState(); renderHabits();
+    });
+  });
+}
+
+/* ============================= GOALS ============================= */
+function renderGoals(){
+  renderRecordManager({
+    containerId:'goals-list', listKey:'goals',
+    fields:[
+      {key:'title', label:'Goal', type:'text', placeholder:'e.g. Run a 10k', required:true},
+      {key:'targetDate', label:'Target date', type:'date'},
+      {key:'progress', label:'Progress %', type:'number', step:'5'}
+    ],
+    columns:[
+      {key:'title', label:'Goal', render:g=>escapeHtml(g.title)},
+      {key:'targetDate', label:'Target', num:true, render:g=>g.targetDate||'—'},
+      {key:'progress', label:'Progress', render:g=>`<div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,g.progress||0)}%"></div></div><div class="sub" style="margin-top:3px;">${g.progress||0}%</div>`}
+    ]
+  });
+}
+
+/* ============================= LEARNING ============================= */
+function renderLearning(){
+  renderRecordManager({
+    containerId:'learning-list', listKey:'courses',
+    fields:[
+      {key:'name', label:'Course / Project', type:'text', required:true},
+      {key:'platform', label:'Platform', type:'text', placeholder:'e.g. YouTube'},
+      {key:'hours', label:'Hours logged', type:'number', step:'0.5'},
+      {key:'skills', label:'Skills learned', type:'text', placeholder:'e.g. React, SQL'}
+    ],
+    columns:[
+      {key:'name', label:'Course / Project', render:c=>escapeHtml(c.name)},
+      {key:'platform', label:'Platform', render:c=>c.platform||'—'},
+      {key:'hours', label:'Hours', num:true, render:c=>hrs(c.hours||0)},
+      {key:'skills', label:'Skills', render:c=>c.skills ? c.skills.split(',').map(s=>`<span class="tag">${escapeHtml(s.trim())}</span>`).join(' ') : '—'}
+    ]
+  });
+}
+
+/* ============================= FINANCE ============================= */
+function renderFinance(){
+  const el = document.getElementById('panel-finance');
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">10</span> Finance</h2>
+    <p class="panel-desc">Track income and expenses beyond your salary.</p>
+    <div class="grid cards-3" id="finance-summary" style="margin-bottom:18px;"></div>
+    <div id="finance-list"></div>
+    <h2 class="panel-title" style="font-size:15px; margin-top:22px;">Last 6 months</h2>
+    <div class="bars" id="finance-bars"></div>
+  `;
+  const draw = ()=>{
+    renderRecordManager({
+      containerId:'finance-list', listKey:'finance',
+      fields:[
+        {key:'date', label:'Date', type:'date', required:true},
+        {key:'type', label:'Type', type:'select', options:[{value:'income',label:'Income'},{value:'expense',label:'Expense'}]},
+        {key:'category', label:'Category', type:'text', placeholder:'e.g. Groceries'},
+        {key:'amount', label:'Amount ($)', type:'number', step:'0.01', required:true}
+      ],
+      columns:[
+        {key:'date', label:'Date', num:true},
+        {key:'type', label:'Type', render:f=>`<span class="tag ${f.type==='income'?'priority-low':'priority-high'}">${f.type}</span>`},
+        {key:'category', label:'Category', render:f=>f.category||'—'},
+        {key:'amount', label:'Amount', num:true, render:f=>money(Number(f.amount))}
+      ],
+      sort: list => list.sort((a,b)=>b.date.localeCompare(a.date)),
+      afterRender: drawSummaryAndChart
+    });
+  };
+  function drawSummaryAndChart(){
+    const now = new Date();
+    const monthKey = fmtMonthKey(now);
+    const monthEntries = state.finance.filter(f=>f.date.startsWith(monthKey));
+    const income = monthEntries.filter(f=>f.type==='income').reduce((s,f)=>s+Number(f.amount),0);
+    const expense = monthEntries.filter(f=>f.type==='expense').reduce((s,f)=>s+Number(f.amount),0);
+    const salary = calcMonthlySalary(monthKey).total;
+    document.getElementById('finance-summary').innerHTML = `
+      <div class="card good"><div class="label">Income this month</div><div class="value small">${money(income+salary)}</div><div class="sub">incl. ${money(salary)} salary</div></div>
+      <div class="card danger"><div class="label">Expenses this month</div><div class="value small">${money(expense)}</div></div>
+      <div class="card accent"><div class="label">Net savings</div><div class="value small">${money(income+salary-expense)}</div></div>
+    `;
+    const months = [];
+    for(let i=5;i>=0;i--){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      months.push({key:fmtMonthKey(d), label:d.toLocaleString(undefined,{month:'short'})});
+    }
+    const netVals = months.map(m=>{
+      const ent = state.finance.filter(f=>f.date.startsWith(m.key));
+      const inc = ent.filter(f=>f.type==='income').reduce((s,f)=>s+Number(f.amount),0) + calcMonthlySalary(m.key).total;
+      const exp = ent.filter(f=>f.type==='expense').reduce((s,f)=>s+Number(f.amount),0);
+      return inc-exp;
+    });
+    const maxAbs = Math.max(1, ...netVals.map(v=>Math.abs(v)));
+    document.getElementById('finance-bars').innerHTML = months.map((m,i)=>{
+      const v = netVals[i];
+      const pct = Math.max(4, Math.round(Math.abs(v)/maxAbs*100));
+      return `<div class="bar-col"><div class="bar" style="height:${pct}%; background:${v<0?'var(--red)':'var(--brass)'};"></div><div class="bar-label">${m.label}<br>${money(v)}</div></div>`;
+    }).join('');
+  }
+  draw();
+}
+
+/* ============================= REPORTS ============================= */
+function renderReports(){
+  const el = document.getElementById('panel-reports');
+  const now = new Date();
+  const monthKey = fmtMonthKey(now);
+  const monthLabel = now.toLocaleString(undefined,{month:'long', year:'numeric'});
+  const workThisMonth = state.workEntries.filter(w=>w.date.startsWith(monthKey));
+  const totalHours = workThisMonth.reduce((s,w)=>s+w.hours,0);
+  const salary = calcMonthlySalary(monthKey);
+  const tasksCompleted = state.tasks.filter(t=>t.done && t.completedDate && t.completedDate.startsWith(monthKey)).length;
+  const longestStreak = state.habits.reduce((max,h)=>Math.max(max, computeStreak(h.id)), 0);
+  const studyHours = state.courses.reduce((s,c)=>s+Number(c.hours||0),0);
+  const savedReview = state.monthlyReviews[monthKey] || '';
+
+  // last 7 days hours bar chart
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push({key:fmtDate(d), label:d.toLocaleString(undefined,{weekday:'short'})});
+  }
+  const dayHours = days.map(d=> state.workEntries.filter(w=>w.date===d.key).reduce((s,w)=>s+w.hours,0));
+  const maxH = Math.max(1, ...dayHours);
+
+  el.innerHTML = `
+    <h2 class="panel-title"><span class="idx">11</span> Reports</h2>
+    <p class="panel-desc">Your monthly review — ${monthLabel}.</p>
+    <div class="grid cards-4">
+      <div class="card accent"><div class="label">Hours worked</div><div class="value">${hrs(totalHours)}</div></div>
+      <div class="card"><div class="label">Salary earned</div><div class="value small">${money(salary.total)}</div></div>
+      <div class="card good"><div class="label">Tasks completed</div><div class="value">${tasksCompleted}</div></div>
+      <div class="card"><div class="label">Longest habit streak</div><div class="value">${longestStreak}d</div></div>
+    </div>
+    <div class="grid cards-2" style="margin-top:14px;">
+      <div class="card"><div class="label">Study / coding hours (all time)</div><div class="value small">${hrs(studyHours)}</div></div>
+      <div class="card"><div class="label">Net savings this month</div><div class="value small">${money(salary.total + state.finance.filter(f=>f.date.startsWith(monthKey)&&f.type==='income').reduce((s,f)=>s+Number(f.amount),0) - state.finance.filter(f=>f.date.startsWith(monthKey)&&f.type==='expense').reduce((s,f)=>s+Number(f.amount),0))}</div></div>
+    </div>
+
+    <h2 class="panel-title" style="font-size:15px; margin-top:22px;">Hours — last 7 days</h2>
+    <div class="bars">${days.map((d,i)=>`<div class="bar-col"><div class="bar" style="height:${Math.max(4,Math.round(dayHours[i]/maxH*100))}%"></div><div class="bar-label">${d.label}<br>${hrs(dayHours[i])}</div></div>`).join('')}</div>
+
+    <h2 class="panel-title" style="font-size:15px; margin-top:22px;">Monthly review</h2>
+    <div class="card review-box">
+      <textarea id="review-text" placeholder="How did this month go? What worked, what didn't...">${escapeHtml(savedReview)}</textarea>
+      <div style="margin-top:10px;"><button id="review-save">Save Review</button></div>
+    </div>
+  `;
+  document.getElementById('review-save').addEventListener('click', ()=>{
+    state.monthlyReviews[monthKey] = document.getElementById('review-text').value;
+    saveState();
+    flashSaved();
+  });
+}
+
+/* ============================= WIRE UP ============================= */
+const RENDERERS = {
+  dashboard: renderDashboard, planner: renderPlanner, work: renderWork, salary: renderSalary,
+  notes: renderNotes, journal: renderJournal, habits: renderHabits, goals: renderGoals,
+  learning: renderLearning, finance: renderFinance, reports: renderReports
+};
+
+function buildPanels(){
+  const content = document.getElementById('content');
+  content.innerHTML = SECTIONS.map(s=>`<section class="panel" id="panel-${s.id}"></section>`).join('');
+}
+
+async function init(){
+  buildNav();
+  buildPanels();
+  await loadState();
+  tickClock();
+  setInterval(tickClock, 1000);
+  showSection('dashboard');
+  document.querySelector('#tabs li[data-id="dashboard"]').classList.add('active');
+}
+init();
+</script>
 </body>
 </html>
